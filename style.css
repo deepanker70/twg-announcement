@@ -1,0 +1,56 @@
+.tma-wrapper {
+    position: relative;
+    border: 1px solid #EEE;
+    border-radius: 4px;
+    box-shadow: 0 2px 12px rgba(0,0,0,.1);
+    margin: 2em 0;
+    padding: 10px 16px;
+}
+.tma-wrapper .tma-text {
+    margin-bottom: 10px;
+}
+.tma-wrapper .tma-text h4
+{
+    line-height: 1.1em;
+    margin-top:1px;
+}
+
+.tma-wrapper .tma-button {
+    right: 16px;
+    white-space: nowrap;
+}
+.tma-button .butn
+{
+    background: #F42;
+    border-radius: 3px;
+    color: #FFF!important;
+    cursor: pointer;
+    display: inline-block;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 5px 16px;
+}
+@media only screen and (max-width:1980px)  {
+    .tma-wrapper .tma-button
+    {
+        position: absolute;
+        top: 28px;
+    }
+    .tma-wrapper .tma-text {
+        padding-right: 150px;
+    }
+    
+}
+
+@media only screen and (max-width:480px)  {
+    .tma-wrapper .tma-button
+    {
+        position: relative;
+        top: 0px;
+        left:5px;
+    }
+    .tma-wrapper .tma-text {
+        padding-right: 5px;
+    }
+    
+}
