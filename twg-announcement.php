@@ -1,164 +1,148 @@
 <?php
 /**
- * Plugin Name: TWG Annoucement
- * Plugin URI: http://gadgets.techlomedia.in/affiliate/
- * Description: This plugin adds annoucement banner in blog post
- * Version: 1.0.0
- * Author: Deepanker verma
+ * Plugin Name: TWG Announcement
+ * Plugin URI: http://techlomedia.in/
+ * Description: This plugin adds an announcement banner in blog posts.
+ * Version: 1.0.1
+ * Author: Deepanker Verma
  * Author URI: https://thewpguides.com
  * License: GPL2
+ * Text Domain: techlomedia-affiliate
  */
 
-wp_enqueue_style( 'style1', plugins_url( 'style.css' , __FILE__ ) );
+// Prevent direct access.
+if ( !defined( 'ABSPATH' ) ) {
+    exit;
+}
 
-add_filter( 'the_content', 'filter_content' );
+// Enqueue CSS properly.
+function tma_enqueue_styles() {
+    wp_enqueue_style( 'tma-style', plugins_url( 'style.css', __FILE__ ) );
+}
+add_action( 'wp_enqueue_scripts', 'tma_enqueue_styles' );
 
-function filter_content( $content ){
-
-    if ( is_single()){
-        $pn = strip_tags(get_option( 'tma_p' ));
-        if($pn=='')
-              $pn=1;
-
-        $adtitle= strip_tags(get_option( 'tma_title' ));
-        $addesc= strip_tags(get_option( 'tma_desc' ));
-        $adurl= strip_tags(get_option( 'tma_link' ));
-        $enable= strip_tags(get_option( 'tma_enable' ));
-        $btntext= strip_tags(get_option( 'tma_btn' ));
-        if($btntext=='')
-        {
-            $btntext = 'Click Here';
-        }
+// Filter content to inject the announcement banner.
+function tma_filter_content( $content ) {
+    if ( is_single() ) {
+        $pn       = absint( get_option( 'tma_p', 1 ) );
+        $adtitle  = sanitize_text_field( get_option( 'tma_title', '' ) );
+        $addesc   = sanitize_textarea_field( get_option( 'tma_desc', '' ) );
+        $adurl    = esc_url( get_option( 'tma_link', '' ) );
+        $enable   = sanitize_text_field( get_option( 'tma_enable', 'no' ) );
+        $btntext  = sanitize_text_field( get_option( 'tma_btn', 'Click Here' ) );
         
-        if($enable=='yes')
-        {
+        if ( $enable === 'yes' ) {
             $ad_code = '<div class="tma-wrapper">
                             <div class="tma-text">
-                                <h4>'.$adtitle.'</h4>
-                                <span>'.$addesc.'</span>
+                                <h4>' . esc_html( $adtitle ) . '</h4>
+                                <span>' . esc_html( $addesc ) . '</span>
                             </div>
                             <div class="tma-button">
-                                <a class="butn gtm-in-article-block" href="'.$adurl.'" target="_blank">'.$btntext.'</a>
+                                <a class="butn gtm-in-article-block" href="' . esc_url( $adurl ) . '" target="_blank">'
+                                    . esc_html( $btntext ) . '</a>
                             </div>
                         </div>';
 
-            if(!is_amp_endpoint())
-            {
-               $closing_p = '</p>';
+            if ( ! ( function_exists( 'is_amp_endpoint' ) && is_amp_endpoint() ) ) {
+
+                $closing_p  = '</p>';
                 $paragraphs = explode( $closing_p, $content );
-                foreach ($paragraphs as $index => $paragraph) {
+
+                foreach ( $paragraphs as $index => $paragraph ) {
                     if ( trim( $paragraph ) ) {
                         $paragraphs[$index] .= $closing_p;
                     }
-                    if ( $pn == $index + 1 ) {
+                    if ( $pn === $index + 1 ) {
                         $paragraphs[$index] .= $ad_code;
                     }
                 }
-                 
+
                 $content = implode( '', $paragraphs );
             }
         }
-       
-      }
-        return $content;
-}
+    }
 
-add_action( 'admin_menu', 'tma_admin' );
- 
-function tma_admin() {
+    return $content;
+}
+add_filter( 'the_content', 'tma_filter_content' );
+
+// Register settings securely.
+function tma_register_settings() {
+    register_setting( 'tma_settings_group', 'tma_title', 'sanitize_text_field' );
+    register_setting( 'tma_settings_group', 'tma_desc', 'sanitize_textarea_field' );
+    register_setting( 'tma_settings_group', 'tma_link', 'esc_url_raw' );
+    register_setting( 'tma_settings_group', 'tma_enable', 'sanitize_text_field' );
+    register_setting( 'tma_settings_group', 'tma_btn', 'sanitize_text_field' );
+    register_setting( 'tma_settings_group', 'tma_p', 'absint' );
+}
+add_action( 'admin_init', 'tma_register_settings' );
+
+// Add admin menu.
+function tma_admin_menu() {
     add_options_page(
-        'TWG Annoucement',
-        'TWG Annoucement Settings',
+        'TWG Announcement',
+        'TWG Announcement Settings',
         'manage_options',
-        'yma-admin-plugin',
+        'tma-admin-plugin',
         'tma_options_page'
     );
 }
+add_action( 'admin_menu', 'tma_admin_menu' );
 
+// Admin settings page.
 function tma_options_page() {
-
-if ( isset( $_POST['info_update'] ) ) {
-    
-    if(is_numeric($_POST['tma_p']))
-    {
-        $tmpCode1 = htmlentities( strip_tags(stripslashes( $_POST['tma_title'] )) , ENT_COMPAT );
-		update_option( 'tma_title', $tmpCode1 );
-		
-		$tmpCode2 = htmlentities( strip_tags(stripslashes( $_POST['tma_desc'] )) , ENT_COMPAT );
-		update_option( 'tma_desc', $tmpCode2 );
-		
-		$tmpCode3 = htmlentities( strip_tags(stripslashes( $_POST['tma_link'] )) , ENT_COMPAT );
-		update_option( 'tma_link', $tmpCode3 );
-        
-		$tmpCode4 = htmlentities( strip_tags(stripslashes( $_POST['tma_enable'] )) , ENT_COMPAT );
-		update_option( 'tma_enable', $tmpCode4 );
-		
-		$tmpCode6 = htmlentities( strip_tags(stripslashes( $_POST['tma_btn'] )) , ENT_COMPAT );
-		update_option( 'tma_btn', $tmpCode6 );
-
-		$tmpCode5 = htmlentities( strip_tags(stripslashes( $_POST['tma_p'] )) , ENT_COMPAT );
-		update_option( 'tma_p', $tmpCode5 );
-        
-        echo '<div id="message" class="updated fade"><p><strong>';
-		echo 'Options Updated!';
-		echo '</strong></p></div>';
-    }
-    else
-    {
-        echo '<div id="message" class="error"><p><strong>';
-		echo 'Error in form data';
-		echo '</strong></p></div>';
-    }
-}
     ?>
     <div class="wrap">
-        <h2>TWG Annoucement</h2>
+        <h2>TWG Announcement Settings</h2>
         <hr />
     </div>
 
-	    <form method="post" action="<?php echo $_SERVER["REQUEST_URI"]; ?>">
-    	    <input type="hidden" name="info_update" id="info_update" value="true" />
-    
-    	    <fieldset class="options">
-    	    <table width="100%" border="0" cellspacing="0" cellpadding="6">
-    	       <tr valign="top"><td width="35%" align="left">
-    	    <strong>Enable:</strong>
-    	    </td><td align="left">
-    	    <select name="tma_enable">
-    	      <option value="no" <?php  if(get_option( 'tma_enable' )=='no'){ echo "selected"; }; ?>>No</option>
-              <option value="yes" <?php  if(get_option( 'tma_enable' )=='yes'){ echo "selected"; }; ?>>Yes</option>
-            </select>
-    	    </td></tr>
-            <tr valign="top"><td width="35%" align="left">
-    	    <strong>Announcenent Title:</strong>
-    	    </td><td align="left">
-    	    <input type="text" name="tma_title" value="<?php echo get_option( 'tma_title' ); ?>" style="width: 90%;" />
-    	    </td></tr>
-            <tr valign="top"><td width="35%" align="left">
-    	    <strong>Announcenent Description:</strong>
-    	    </td><td align="left">
-    	    <textarea name="tma_desc" style="width: 90%;"><?php echo get_option( 'tma_desc' ); ?></textarea>
-    	    </td></tr>
-    	    <tr valign="top"><td width="35%" align="left">
-    	    <strong>Button Text:</strong>
-    	    </td><td align="left">
-    	    <input type="text" name="tma_btn" value="<?php echo get_option( 'tma_btn' ); ?>" style="width: 90%;" />
-    	    </td></tr>
-    	    <tr valign="top"><td width="35%" align="left">
-    	    <strong>Button Link:</strong>
-    	    </td><td align="left">
-    	    <input type="text" name="tma_link" value="<?php echo get_option( 'tma_link' ); ?>" style="width: 90%;" />
-    	    </td></tr>
-    	    <tr valign="top"><td width="35%" align="left">
-    	    <strong>Nummber of paragraph after which you want to put ad:</strong>
-    	    </td><td align="left">
-    	    <input type="text" name="tma_p" value="<?php echo get_option( 'tma_p' ); ?>" />
-    	    </td></tr>
-                </table>
-                <div class="submit">
-    	        <input type="submit" name="info_update" value="<?php _e( 'Save Options' ); ?> &raquo;" />
-    	    </div>
-	    </form>
+    <form method="post" action="options.php">
+        <?php
+        settings_fields( 'tma_settings_group' );
+        do_settings_sections( 'tma_settings_group' );
+        wp_nonce_field( 'tma_update_options', 'tma_nonce' );
+        ?>
+
+        <table class="form-table">
+            <tr valign="top">
+                <th scope="row">Enable:</th>
+                <td>
+                    <select name="tma_enable">
+                        <option value="no" <?php selected( get_option( 'tma_enable' ), 'no' ); ?>>No</option>
+                        <option value="yes" <?php selected( get_option( 'tma_enable' ), 'yes' ); ?>>Yes</option>
+                    </select>
+                </td>
+            </tr>
+
+            <tr valign="top">
+                <th scope="row">Announcement Title:</th>
+                <td><input type="text" name="tma_title" value="<?php echo esc_attr( get_option( 'tma_title' ) ); ?>" style="width: 90%;" /></td>
+            </tr>
+
+            <tr valign="top">
+                <th scope="row">Announcement Description:</th>
+                <td><textarea name="tma_desc" style="width: 90%;"><?php echo esc_textarea( get_option( 'tma_desc' ) ); ?></textarea></td>
+            </tr>
+
+            <tr valign="top">
+                <th scope="row">Button Text:</th>
+                <td><input type="text" name="tma_btn" value="<?php echo esc_attr( get_option( 'tma_btn' ) ); ?>" style="width: 90%;" /></td>
+            </tr>
+
+            <tr valign="top">
+                <th scope="row">Button Link:</th>
+                <td><input type="text" name="tma_link" value="<?php echo esc_url( get_option( 'tma_link' ) ); ?>" style="width: 90%;" /></td>
+            </tr>
+
+            <tr valign="top">
+                <th scope="row">Paragraph Number for Ad Placement:</th>
+                <td><input type="number" name="tma_p" value="<?php echo absint( get_option( 'tma_p', 1 ) ); ?>" min="1" /></td>
+            </tr>
+        </table>
+
+        <?php submit_button(); ?>
+    </form>
     <?php
 }
 ?>
